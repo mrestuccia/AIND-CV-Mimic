@@ -20,7 +20,14 @@ detector.detectAllAppearance();
 // --- Utility values and functions ---
 
 // Unicode values for all emojis Affectiva can detect
-var emojis = [ 128528, 9786, 128515, 128524, 128527, 128521, 128535, 128539, 128540, 128542, 128545, 128563, 128561 ];
+//var emojis = [128528, 9786, 128515, 128524, 128527, 128521, 128535, 128539, 128540, 128542, 128545, 128563, 128561];
+var emojis = [128528, 128515, 128524, 128527, 128521, 128542, 128545, 128563, 128561];
+
+//9786
+//128540
+//128539
+//128535
+
 
 // Update target emoji being displayed by supplying a unicode value
 function setTargetEmoji(code) {
@@ -29,7 +36,7 @@ function setTargetEmoji(code) {
 
 // Convert a special character to its unicode value (can be 1 or 2 units long)
 function toUnicode(c) {
-  if(c.length == 1)
+  if (c.length == 1)
     return c.charCodeAt(0);
   return ((((c.charCodeAt(0) - 0xD800) * 0x400) + (c.charCodeAt(1) - 0xDC00) + 0x10000));
 }
@@ -74,41 +81,41 @@ function onReset() {
   $("#logs").html("");  // clear out previous log
 
   // TODO(optional): You can restart the game as well
-  // <your code here>
+  init();
 };
 
 // Add a callback to notify when camera access is allowed
-detector.addEventListener("onWebcamConnectSuccess", function() {
+detector.addEventListener("onWebcamConnectSuccess", function () {
   log('#logs', "Webcam access allowed");
 });
 
 // Add a callback to notify when camera access is denied
-detector.addEventListener("onWebcamConnectFailure", function() {
+detector.addEventListener("onWebcamConnectFailure", function () {
   log('#logs', "webcam denied");
   console.log("Webcam access denied");
 });
 
 // Add a callback to notify when detector is stopped
-detector.addEventListener("onStopSuccess", function() {
+detector.addEventListener("onStopSuccess", function () {
   log('#logs', "The detector reports stopped");
   $("#results").html("");
 });
 
 // Add a callback to notify when the detector is initialized and ready for running
-detector.addEventListener("onInitializeSuccess", function() {
+detector.addEventListener("onInitializeSuccess", function () {
   log('#logs', "The detector reports initialized");
   //Display canvas instead of video feed because we want to draw the feature points on it
   $("#face_video_canvas").css("display", "block");
   $("#face_video").css("display", "none");
 
   // TODO(optional): Call a function to initialize the game, if needed
-  // <your code here>
+  init();
 });
 
 // Add a callback to receive the results from processing an image
 // NOTE: The faces object contains a list of the faces detected in the image,
 //   probabilities for different expressions, emotions and appearance metrics
-detector.addEventListener("onImageResultsSuccess", function(faces, image, timestamp) {
+detector.addEventListener("onImageResultsSuccess", function (faces, image, timestamp) {
   var canvas = $('#face_video_canvas')[0];
   if (!canvas)
     return;
@@ -120,10 +127,10 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
   if (faces.length > 0) {
     // Report desired metrics
     log('#results', "Appearance: " + JSON.stringify(faces[0].appearance));
-    log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function(key, val) {
+    log('#results', "Emotions: " + JSON.stringify(faces[0].emotions, function (key, val) {
       return val.toFixed ? Number(val.toFixed(0)) : val;
     }));
-    log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function(key, val) {
+    log('#results', "Expressions: " + JSON.stringify(faces[0].expressions, function (key, val) {
       return val.toFixed ? Number(val.toFixed(0)) : val;
     }));
     log('#results', "Emoji: " + faces[0].emojis.dominantEmoji);
@@ -133,7 +140,7 @@ detector.addEventListener("onImageResultsSuccess", function(faces, image, timest
     drawEmoji(canvas, image, faces[0]);
 
     // TODO: Call your function to run the game (define it first!)
-    // <your code here>
+    game(faces[0]);
   }
 });
 
@@ -145,16 +152,15 @@ function drawFeaturePoints(canvas, img, face) {
   // Obtain a 2D context object to draw on the canvas
   var ctx = canvas.getContext('2d');
 
- 
+
   // TODO: Set the stroke and/or fill style you want for each feature point marker
   // See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D#Fill_and_stroke_styles
-  // <your code here>
   ctx.strokeStyle = 'yellow';
-  
+
   // Loop over each feature point in the face
   for (var id in face.featurePoints) {
     var featurePoint = face.featurePoints[id];
-   
+
     // TODO: Draw feature point, e.g. as a circle using ctx.arc()
     // See: https://developer.mozilla.org/en-US/docs/Web/API/CanvasRenderingContext2D/arc
     ctx.beginPath();
@@ -196,3 +202,55 @@ function drawEmoji(canvas, img, face) {
 // - Define a game reset function (same as init?), and call it from the onReset() function above
 
 // <your code here>
+var updates = 0;
+var currentEmoji;
+var score = 0;
+var total = 0;
+
+function init() {
+  total = 0;
+  score = 0;
+  updates = 0;
+
+  // Update the score
+  setScore(score, total);
+
+  // Set the next emoji
+  nextEmoji();
+}
+
+
+function game(face) {
+  updates++;
+
+  // Check if similar
+  if (toUnicode(face.emojis.dominantEmoji) === currentEmoji) {
+    score++;
+
+    nextEmoji();
+  }
+
+
+  if (updates === 100) {
+    // Set updates = 0
+    updates = 0;
+
+    // Define the next emoji
+    nextEmoji();
+  }
+
+  // Update the score
+  setScore(score, total);
+
+  if (total === 10) {
+    onStop();
+  }
+
+}
+
+function nextEmoji() {
+  // Define the next emoji
+  currentEmoji = emojis[Math.floor(Math.random() * emojis.length)];
+  setTargetEmoji(currentEmoji);
+  total++;
+}
