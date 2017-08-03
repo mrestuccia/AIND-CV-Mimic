@@ -201,7 +201,7 @@ function drawEmoji(canvas, img, face) {
 // - Define an initialization/reset function, and call it from the "onInitializeSuccess" event handler above
 // - Define a game reset function (same as init?), and call it from the onReset() function above
 
-// <your code here>
+// Global Variables
 var updates = 0;
 var currentEmoji;
 var score = 0;
